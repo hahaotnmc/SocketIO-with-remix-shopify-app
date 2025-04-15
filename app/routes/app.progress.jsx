@@ -13,13 +13,18 @@ export const loader = async ({ request }) => {
 
 const simulateProcess = async () => {
   for (let i = 1; i <= 10; i++) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log(i);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const progress = i * 10;
-    broadcastProgress(progress);
+    console.log(`Sending progress: ${progress}%`);
+
+    await pusher.trigger('progress-channel', 'progress-update', {
+      progress,
+    });
   }
-  return 10;
-}
+
+  return 100;
+};
 
 export const action = async ({ request }) => {
   await authenticate.admin(request);
@@ -33,18 +38,20 @@ export default function ProgressPage() {
   const submit = useSubmit();
 
   useEffect(() => {
-    // Initialize socket connection to the correct port
-    const newSocket = io('http://localhost:3001');
-    setSocket(newSocket);
+    const pusher = new Pusher('f17237a18a493b9393f8', {
+      cluster: 'ap1',
+    });
 
-    // Listen for progress updates
-    newSocket.on('progress', (data) => {
+    const channel = pusher.subscribe('progress-channel');
+
+    channel.bind('progress-update', (data) => {
       setProgress(data.progress);
     });
 
-    // Cleanup on unmount
     return () => {
-      newSocket.close();
+      channel.unbind_all();
+      channel.unsubscribe();
+      pusher.disconnect();
     };
   }, []);
 
