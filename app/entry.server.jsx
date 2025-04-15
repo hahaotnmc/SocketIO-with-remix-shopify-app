@@ -3,21 +3,25 @@ import { renderToPipeableStream } from "react-dom/server";
 import { RemixServer } from "@remix-run/react";
 import { createReadableStreamFromReadable } from "@remix-run/node";
 import { isbot } from "isbot";
-import { addDocumentResponseHeaders } from "./shopify.server";
+import { createSocketServer } from "./socket.server";
 
-export const streamTimeout = 5000;
+const ABORT_DELAY = 5000;
 
 export default async function handleRequest(
   request,
   responseStatusCode,
   responseHeaders,
-  remixContext,
+  remixContext
 ) {
-  addDocumentResponseHeaders(request, responseHeaders);
   const userAgent = request.headers.get("user-agent");
   const callbackName = isbot(userAgent ?? "") ? "onAllReady" : "onShellReady";
 
+  // Initialize Socket.IO server
+  createSocketServer();
+
   return new Promise((resolve, reject) => {
+    let didError = false;
+
     const { pipe, abort } = renderToPipeableStream(
       <RemixServer context={remixContext} url={request.url} />,
       {
@@ -26,26 +30,26 @@ export default async function handleRequest(
           const stream = createReadableStreamFromReadable(body);
 
           responseHeaders.set("Content-Type", "text/html");
+
           resolve(
             new Response(stream, {
               headers: responseHeaders,
-              status: responseStatusCode,
-            }),
+              status: didError ? 500 : responseStatusCode,
+            })
           );
+
           pipe(body);
         },
-        onShellError(error) {
-          reject(error);
+        onShellError: (err) => {
+          reject(err);
         },
-        onError(error) {
-          responseStatusCode = 500;
+        onError: (error) => {
+          didError = true;
           console.error(error);
         },
-      },
+      }
     );
 
-    // Automatically timeout the React renderer after 6 seconds, which ensures
-    // React has enough time to flush down the rejected boundary contents
-    setTimeout(abort, streamTimeout + 1000);
+    setTimeout(abort, ABORT_DELAY);
   });
 }

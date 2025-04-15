@@ -3,7 +3,7 @@
 client_id = "fdeac7fa9b98347c1681fa09f8af21cc"
 name = "TestappSocket"
 handle = "testappsocket"
-application_url = "https://dual-fiction-va-lauderdale.trycloudflare.com"
+application_url = "https://rolls-consists-dam-listing.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://dual-fiction-va-lauderdale.trycloudflare.com/auth/callback",
-  "https://dual-fiction-va-lauderdale.trycloudflare.com/auth/shopify/callback",
-  "https://dual-fiction-va-lauderdale.trycloudflare.com/api/auth/callback"
+  "https://rolls-consists-dam-listing.trycloudflare.com/auth/callback",
+  "https://rolls-consists-dam-listing.trycloudflare.com/auth/shopify/callback",
+  "https://rolls-consists-dam-listing.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
